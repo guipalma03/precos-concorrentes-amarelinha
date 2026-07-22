@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitor de Preços · Concorrência</title>
+<style>
+:root{
+  --ink:#14110F;
+  --paper:#F7F4EE;
+  --panel:#FFFFFF;
+  --line:#E3DDD1;
+  --muted:#8A8175;
+  /* swatches — cada concorrente ganha uma tinta */
+  --c-saci:#C0392B;
+  --c-rn:#1F6FB2;
+  --c-carola:#E08A1E;
+  --c-diamante:#5B4B8A;
+  --accent:#14110F;
+  --good:#1E7D46;
+  --bad:#B23A2E;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:"Inter","Helvetica Neue",Arial,sans-serif;
+  background:var(--paper);color:var(--ink);
+  -webkit-font-smoothing:antialiased;line-height:1.4;
+}
+.wrap{max-width:1240px;margin:0 auto;padding:28px 22px 80px}
+
+/* ---- Cabeçalho ---- */
+header{border-bottom:2px solid var(--ink);padding-bottom:18px;margin-bottom:22px}
+.eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-size:clamp(28px,4.5vw,46px);font-weight:800;letter-spacing:-.02em;line-height:1;margin:8px 0 6px}
+.sub{font-size:14px;color:var(--muted);max-width:60ch}
+.swatch-strip{display:flex;gap:0;margin-top:16px;height:8px;border-radius:4px;overflow:hidden}
+.swatch-strip span{flex:1}
+
+/* ---- KPIs ---- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:26px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.kpi .n{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1}
+.kpi .l{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:6px;font-weight:600}
+
+/* ---- Filtros ---- */
+.filters{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:20px}
+.filters-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.field label{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:6px}
+.field input,.field select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--paper);color:var(--ink);font-family:inherit}
+.field input:focus,.field select:focus{outline:2px solid var(--ink);outline-offset:-1px}
+.filter-foot{display:flex;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap;gap:10px}
+.count{font-size:13px;color:var(--muted)}
+.count b{color:var(--ink)}
+.btn{padding:8px 16px;border:1px solid var(--ink);background:var(--ink);color:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn:hover{opacity:.85}
+
+/* ---- Tabela ---- */
+.tablecard{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.tscroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:920px}
+thead th{
+  text-align:left;padding:13px 14px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);font-weight:700;border-bottom:2px solid var(--ink);white-space:nowrap;cursor:pointer;user-select:none;
+  position:sticky;top:0;background:var(--panel)
+}
+thead th:hover{color:var(--ink)}
+thead th .arrow{opacity:.4;font-size:10px}
+tbody td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr:hover{background:#FBF9F4}
+.conc-tag{display:inline-flex;align-items:center;gap:7px;font-weight:700;white-space:nowrap}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.item-desc{font-weight:500;max-width:340px}
+.marca-badge{display:inline-block;padding:2px 9px;border-radius:20px;background:var(--paper);border:1px solid var(--line);font-size:12px;font-weight:600}
+.preco{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.desc-yes{color:var(--good);font-weight:700;font-variant-numeric:tabular-nums}
+.desc-no{color:var(--muted)}
+.pgto{font-size:12.5px}
+.data-cell{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.empty{text-align:center;padding:50px;color:var(--muted)}
+
+/* ---- Comparador de marca ---- */
+.compare{margin-top:30px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+.compare h2{font-size:16px;font-weight:800;letter-spacing:-.01em;margin-bottom:4px}
+.compare .hint{font-size:12.5px;color:var(--muted);margin-bottom:16px}
+.bars{display:flex;flex-direction:column;gap:10px}
+.bar-row{display:grid;grid-template-columns:200px 1fr 90px;gap:12px;align-items:center}
+.bar-lbl{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-lbl small{display:block;color:var(--muted);font-weight:500}
+.bar-track{background:var(--paper);border-radius:6px;height:26px;position:relative;overflow:hidden;border:1px solid var(--line)}
+.bar-fill{height:100%;border-radius:5px 0 0 5px;transition:width .4s ease}
+.bar-val{font-weight:800;font-variant-numeric:tabular-nums;font-size:13px;text-align:right}
+.note{margin-top:22px;font-size:12px;color:var(--muted);border-left:3px solid var(--c-diamante);padding-left:12px}
+
+@media(max-width:640px){
+  .bar-row{grid-template-columns:120px 1fr 70px}
+  .bar-lbl small{display:none}
+}
+
+/* ---- Barra de orçamentos ---- */
+.orcbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+.orcbar .count{font-size:13px;color:var(--muted)}
+.orcbar .count b{color:var(--ink);font-size:15px}
+.sortbox{display:flex;align-items:center;gap:8px}
+.sortbox label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.sortbox select{padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:var(--panel);color:var(--ink);font-family:inherit}
+
+/* ---- Card de orçamento (agrupado) ---- */
+.orc{background:var(--panel);border:1px solid var(--line);border-radius:14px;margin-bottom:12px;overflow:hidden}
+.orc-head{display:grid;grid-template-columns:16px 1.4fr 1fr auto;gap:14px;align-items:center;padding:16px 18px;cursor:pointer;user-select:none}
+.orc-head:hover{background:#FBF9F4}
+.chev{transition:transform .2s;color:var(--muted);font-size:13px}
+.orc.open .chev{transform:rotate(90deg)}
+.orc-id{min-width:0}
+.orc-conc{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15px}
+.orc-conc .dot{width:11px;height:11px;border-radius:50%;flex:none}
+.orc-meta{font-size:12px;color:var(--muted);margin-top:3px}
+.orc-meta .num{font-variant-numeric:tabular-nums}
+.orc-stats{display:flex;gap:22px;flex-wrap:wrap}
+.stat .v{font-weight:800;font-variant-numeric:tabular-nums;font-size:14px}
+.stat .k{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.orc-pgto{text-align:right;font-size:12.5px}
+.orc-pgto .v{font-weight:600}
+.orc-pgto .k{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.orc-body{display:none;border-top:1px solid var(--line)}
+.orc.open .orc-body{display:block}
+.orc-body table{width:100%;border-collapse:collapse;font-size:13.5px}
+.orc-body td{padding:10px 18px;border-bottom:1px solid var(--line);vertical-align:top}
+.orc-body tr:last-child td{border-bottom:none}
+.orc-body tr:hover{background:#FBF9F4}
+.oi-item{font-weight:500}
+.oi-marca .marca-badge{font-size:11px}
+.oi-preco{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.oi-desc{text-align:right;white-space:nowrap}
+@media(max-width:720px){
+  .orc-head{grid-template-columns:16px 1fr;gap:8px}
+  .orc-stats,.orc-pgto{grid-column:2;justify-content:flex-start;text-align:left;margin-top:6px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Inteligência de Mercado · Tintas & Acessórios</div>
+    <h1>Monitor de Preços da Concorrência</h1>
+    <p class="sub">Consolidação de orçamentos captados de lojas concorrentes. Filtre por concorrente, marca, item, prazo de pagamento e desconto para posicionar preços e negociar.</p>
+    <div class="swatch-strip">
+      <span style="background:var(--c-saci)"></span>
+      <span style="background:var(--c-rn)"></span>
+      <span style="background:var(--c-carola)"></span>
+      <span style="background:var(--c-diamante)"></span>
+    </div>
+  </header>
+
+  <section class="kpis" id="kpis"></section>
+
+  <section class="filters">
+    <div class="filters-grid">
+      <div class="field">
+        <label>Buscar item / marca</label>
+        <input type="text" id="f-busca" placeholder="ex: acrílico, suvinil, lixa…">
+      </div>
+      <div class="field">
+        <label>Concorrente</label>
+        <select id="f-conc"><option value="">Todos</option></select>
+      </div>
+      <div class="field">
+        <label>Cidade</label>
+        <select id="f-cidade"><option value="">Todas</option></select>
+      </div>
+      <div class="field">
+        <label>Marca</label>
+        <select id="f-marca"><option value="">Todas</option></select>
+      </div>
+      <div class="field">
+        <label>Prazo de pagamento</label>
+        <select id="f-pgto"><option value="">Todos</option></select>
+      </div>
+      <div class="field">
+        <label>Desconto</label>
+        <select id="f-desc">
+          <option value="">Todos</option>
+          <option value="com">Com desconto</option>
+          <option value="sem">Sem desconto</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Preço máximo (R$)</label>
+        <input type="number" id="f-max" placeholder="sem limite" min="0">
+      </div>
+    </div>
+    <div class="filter-foot">
+      <span class="count"><b id="cnt">0</b> de <span id="tot">0</span> itens exibidos</span>
+      <button class="btn ghost" id="reset">Limpar filtros</button>
+    </div>
+  </section>
+
+  <div class="orcbar">
+    <span class="count"><b id="cntorc">0</b> orçamentos · <span id="cntitens">0</span> itens</span>
+    <div class="sortbox">
+      <label>Ordenar por</label>
+      <select id="ordem">
+        <option value="data">Data (mais recente)</option>
+        <option value="conc">Concorrente</option>
+        <option value="cidade">Cidade</option>
+        <option value="itens">Nº de itens</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="grupos"></div>
+
+  <section class="compare">
+    <h2>Comparador rápido de preço por marca</h2>
+    <p class="hint">Selecione uma marca para ver o preço de cada item entre os concorrentes que a oferecem.</p>
+    <div class="field" style="max-width:260px;margin-bottom:18px">
+      <label>Marca a comparar</label>
+      <select id="cmp-marca"></select>
+    </div>
+    <div class="bars" id="cmp-bars"></div>
+  </section>
+
+  <p class="note" id="notaDesc"></p>
+  <p class="note" style="border-left-color:var(--muted)">Marcas inferidas a partir da descrição do produto no orçamento. Preços são unitários (por unidade/lata/rolo/metro conforme o orçamento). Descontos percentuais da RN Tintas constam item a item; a Diamante concedeu desconto sobre o total do pedido.</p>
+</div>
+
+<script>
+const DADOS = [
+ {
+  "conc": "Saci Tintas",
+  "loja": "Jundiai",
+  "orcamento": "3197188",
+  "valor_total": 5100.0,
+  "data": "2026-06-02",
+  "pgto": "30/60/90 DDL",
+  "item": "Acril FOS STD Branco 18L Rende Muito",
+  "marca": "Genérica",
+  "preco": 353.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Saci Tintas",
+  "loja": "Jundiai",
+  "orcamento": "3197188",
+  "valor_total": 5100.0,
+  "data": "2026-06-02",
+  "pgto": "30/60/90 DDL",
+  "item": "Fundo Prep. Paredes Base Agua GL Coral",
+  "marca": "Coral",
+  "preco": 110.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Saci Tintas",
+  "loja": "Jundiai",
+  "orcamento": "3197188",
+  "valor_total": 5100.0,
+  "data": "2026-06-02",
+  "pgto": "30/60/90 DDL",
+  "item": "ESM Bril Preto GL Coralit Ultra",
+  "marca": "Coral",
+  "preco": 157.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Saci Tintas",
+  "loja": "Jundiai",
+  "orcamento": "3197188",
+  "valor_total": 5100.0,
+  "data": "2026-06-02",
+  "pgto": "30/60/90 DDL",
+  "item": "Thinner P/ USO Geral 700/7100 5L Polaris",
+  "marca": "Polaris",
+  "preco": 85.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Saci Tintas",
+  "loja": "Jundiai",
+  "orcamento": "3197188",
+  "valor_total": 5100.0,
+  "data": "2026-06-02",
+  "pgto": "30/60/90 DDL",
+  "item": "Fita Crepe Premium Azul 48X50 Adelbras",
+  "marca": "Adelbras",
+  "preco": 30.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Saci Tintas",
+  "loja": "Jundiai",
+  "orcamento": "3197188",
+  "valor_total": 5100.0,
+  "data": "2026-06-02",
+  "pgto": "30/60/90 DDL",
+  "item": "Gesso Estuque 1KG",
+  "marca": "Genérica",
+  "preco": 7.5,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Saci Tintas",
+  "loja": "Jundiai",
+  "orcamento": "3197188",
+  "valor_total": 5100.0,
+  "data": "2026-06-02",
+  "pgto": "30/60/90 DDL",
+  "item": "Rolo LA Ref. 1374 23CM Anti-gota Tigre",
+  "marca": "Tigre",
+  "preco": 31.05,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Saci Tintas",
+  "loja": "Jundiai",
+  "orcamento": "3197188",
+  "valor_total": 5100.0,
+  "data": "2026-06-02",
+  "pgto": "30/60/90 DDL",
+  "item": "Rolo Espuma REF.1341/09CM C/ Cabo Tigre",
+  "marca": "Tigre",
+  "preco": 7.7,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Saci Tintas",
+  "loja": "Jundiai",
+  "orcamento": "3197188",
+  "valor_total": 5100.0,
+  "data": "2026-06-02",
+  "pgto": "30/60/90 DDL",
+  "item": "Pincel 920 2 Premium Tigre",
+  "marca": "Tigre",
+  "preco": 15.5,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Saci Tintas",
+  "loja": "Jundiai",
+  "orcamento": "3197188",
+  "valor_total": 5100.0,
+  "data": "2026-06-02",
+  "pgto": "30/60/90 DDL",
+  "item": "Pincel REF.519 2 1/2 Tigre",
+  "marca": "Tigre",
+  "preco": 15.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Saci Tintas",
+  "loja": "Jundiai",
+  "orcamento": "3197188",
+  "valor_total": 5100.0,
+  "data": "2026-06-02",
+  "pgto": "30/60/90 DDL",
+  "item": "Lixa Ferro 180 K-246 Norton",
+  "marca": "Norton",
+  "preco": 3.85,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Saci Tintas",
+  "loja": "Jundiai",
+  "orcamento": "3197188",
+  "valor_total": 5100.0,
+  "data": "2026-06-02",
+  "pgto": "30/60/90 DDL",
+  "item": "Lixa Massa 220 A-257 Norton",
+  "marca": "Norton",
+  "preco": 1.2,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Saci Tintas",
+  "loja": "Jundiai",
+  "orcamento": "3197188",
+  "valor_total": 5100.0,
+  "data": "2026-06-02",
+  "pgto": "30/60/90 DDL",
+  "item": "Lona Preta 4X100 Grossa",
+  "marca": "Genérica",
+  "preco": 4.2,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Saci Tintas",
+  "loja": "Jundiai",
+  "orcamento": "3197188",
+  "valor_total": 5100.0,
+  "data": "2026-06-02",
+  "pgto": "30/60/90 DDL",
+  "item": "Massa Corrida PVA GL 3,6L Suvinil",
+  "marca": "Suvinil",
+  "preco": 47.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Saci Tintas",
+  "loja": "Jundiai",
+  "orcamento": "3197188",
+  "valor_total": 5100.0,
+  "data": "2026-06-02",
+  "pgto": "30/60/90 DDL",
+  "item": "Estopa 1KG",
+  "marca": "Genérica",
+  "preco": 16.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Saci Tintas",
+  "loja": "Jundiai",
+  "orcamento": "3197188",
+  "valor_total": 5100.0,
+  "data": "2026-06-02",
+  "pgto": "30/60/90 DDL",
+  "item": "SOL Chuva 16BB 25 001 ON.00.49 Imen MF 16",
+  "marca": "Genérica",
+  "preco": 680.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Saci Tintas",
+  "loja": "Jundiai",
+  "orcamento": "3197188",
+  "valor_total": 5100.0,
+  "data": "2026-06-02",
+  "pgto": "30/60/90 DDL",
+  "item": "SOL Chuva 36RR 14 002 ON.00.33 Mine MF 16",
+  "marca": "Genérica",
+  "preco": 798.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Saci Tintas",
+  "loja": "Jundiai",
+  "orcamento": "3197188",
+  "valor_total": 5100.0,
+  "data": "2026-06-02",
+  "pgto": "30/60/90 DDL",
+  "item": "Textura Fina Lisa Externa Barrica Polaris",
+  "marca": "Polaris",
+  "preco": 69.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "RN Tintas",
+  "loja": "Itapira",
+  "orcamento": "4618598",
+  "valor_total": 7585.0,
+  "data": "2026-06-05",
+  "pgto": "A VISTA",
+  "item": "Acrilico Rende Muito Branco Neve Balde 20L-SUVINIL",
+  "marca": "Suvinil",
+  "preco": 345.0,
+  "desc_valor": 0.0,
+  "desc_pct": 13.73
+ },
+ {
+  "conc": "RN Tintas",
+  "loja": "Itapira",
+  "orcamento": "4618598",
+  "valor_total": 7585.0,
+  "data": "2026-06-05",
+  "pgto": "A VISTA",
+  "item": "Aguarras 5LT - Natrielli",
+  "marca": "Natrielli",
+  "preco": 110.0,
+  "desc_valor": 0.0,
+  "desc_pct": 32.13
+ },
+ {
+  "conc": "RN Tintas",
+  "loja": "Itapira",
+  "orcamento": "4618598",
+  "valor_total": 7585.0,
+  "data": "2026-06-05",
+  "pgto": "A VISTA",
+  "item": "Argamassa AC-2 Externa Cinza 20 KG - Ceramfix",
+  "marca": "Ceramfix",
+  "preco": 35.0,
+  "desc_valor": 0.0,
+  "desc_pct": 17.04
+ },
+ {
+  "conc": "RN Tintas",
+  "loja": "Itapira",
+  "orcamento": "4618598",
+  "valor_total": 7585.0,
+  "data": "2026-06-05",
+  "pgto": "A VISTA",
+  "item": "ESM COR PRO PRA ACE Agua RM041 Cinza- Escuro C2 3.2",
+  "marca": "Genérica",
+  "preco": 199.0,
+  "desc_valor": 0.0,
+  "desc_pct": 30.67
+ },
+ {
+  "conc": "RN Tintas",
+  "loja": "Itapira",
+  "orcamento": "4618598",
+  "valor_total": 7585.0,
+  "data": "2026-06-05",
+  "pgto": "A VISTA",
+  "item": "Esmalte Contra Ferrugem Cinza Escuro BRI.3,6LT-SUV",
+  "marca": "Genérica",
+  "preco": 199.0,
+  "desc_valor": 0.0,
+  "desc_pct": 26.19
+ },
+ {
+  "conc": "RN Tintas",
+  "loja": "Itapira",
+  "orcamento": "4618598",
+  "valor_total": 7585.0,
+  "data": "2026-06-05",
+  "pgto": "A VISTA",
+  "item": "Fita Crepe Automotiva Verde 525 48MMX50M - Adere",
+  "marca": "Adere",
+  "preco": 20.0,
+  "desc_valor": 0.0,
+  "desc_pct": 40.93
+ },
+ {
+  "conc": "RN Tintas",
+  "loja": "Itapira",
+  "orcamento": "4618598",
+  "valor_total": 7585.0,
+  "data": "2026-06-05",
+  "pgto": "A VISTA",
+  "item": "Fundo Preparador Paredes B.agua 18 LT - Suvinil",
+  "marca": "Suvinil",
+  "preco": 299.0,
+  "desc_valor": 0.0,
+  "desc_pct": 28.85
+ },
+ {
+  "conc": "RN Tintas",
+  "loja": "Itapira",
+  "orcamento": "4618598",
+  "valor_total": 7585.0,
+  "data": "2026-06-05",
+  "pgto": "A VISTA",
+  "item": "Gesso 1KG - Plasmar",
+  "marca": "Plasmar",
+  "preco": 4.0,
+  "desc_valor": 0.0,
+  "desc_pct": 22.18
+ },
+ {
+  "conc": "RN Tintas",
+  "loja": "Itapira",
+  "orcamento": "4618598",
+  "valor_total": 7585.0,
+  "data": "2026-06-05",
+  "pgto": "A VISTA",
+  "item": "Lixa Ferro G-220 (K246) - Norton",
+  "marca": "Norton",
+  "preco": 3.5,
+  "desc_valor": 0.0,
+  "desc_pct": 20.27
+ },
+ {
+  "conc": "RN Tintas",
+  "loja": "Itapira",
+  "orcamento": "4618598",
+  "valor_total": 7585.0,
+  "data": "2026-06-05",
+  "pgto": "A VISTA",
+  "item": "Lixa Ferro G-36 (K246) - Norton",
+  "marca": "Norton",
+  "preco": 4.5,
+  "desc_valor": 0.0,
+  "desc_pct": 21.19
+ },
+ {
+  "conc": "RN Tintas",
+  "loja": "Itapira",
+  "orcamento": "4618598",
+  "valor_total": 7585.0,
+  "data": "2026-06-05",
+  "pgto": "A VISTA",
+  "item": "Lona Preta 50 Micras (4M Largura) - Maxilona",
+  "marca": "Maxilona",
+  "preco": 3.0,
+  "desc_valor": 0.0,
+  "desc_pct": 26.11
+ },
+ {
+  "conc": "RN Tintas",
+  "loja": "Itapira",
+  "orcamento": "4618598",
+  "valor_total": 7585.0,
+  "data": "2026-06-05",
+  "pgto": "A VISTA",
+  "item": "Massa Acrilica 15,9 LT (25 KG) Lata - Suvinil",
+  "marca": "Suvinil",
+  "preco": 216.0,
+  "desc_valor": 0.0,
+  "desc_pct": 36.59
+ },
+ {
+  "conc": "RN Tintas",
+  "loja": "Itapira",
+  "orcamento": "4618598",
+  "valor_total": 7585.0,
+  "data": "2026-06-05",
+  "pgto": "A VISTA",
+  "item": "Resina Acrilica B.solvente Incolor 5,0 LT -suvinil",
+  "marca": "Suvinil",
+  "preco": 280.0,
+  "desc_valor": 0.0,
+  "desc_pct": 24.81
+ },
+ {
+  "conc": "RN Tintas",
+  "loja": "Itapira",
+  "orcamento": "4618598",
+  "valor_total": 7585.0,
+  "data": "2026-06-05",
+  "pgto": "A VISTA",
+  "item": "Tecplus TOP 18 KG - Quartzolit",
+  "marca": "Quartzolit",
+  "preco": 65.0,
+  "desc_valor": 0.0,
+  "desc_pct": 17.44
+ },
+ {
+  "conc": "RN Tintas",
+  "loja": "Itapira",
+  "orcamento": "4618598",
+  "valor_total": 7585.0,
+  "data": "2026-06-05",
+  "pgto": "A VISTA",
+  "item": "Textura Grafiato 10 Grossa Branca 23KG-GRAFFORT",
+  "marca": "Graffort",
+  "preco": 75.0,
+  "desc_valor": 0.0,
+  "desc_pct": 27.28
+ },
+ {
+  "conc": "RN Tintas",
+  "loja": "Itapira",
+  "orcamento": "4618598",
+  "valor_total": 7585.0,
+  "data": "2026-06-05",
+  "pgto": "A VISTA",
+  "item": "Thinner 12116 Multiuso 5 LT - Audi",
+  "marca": "Audi",
+  "preco": 119.0,
+  "desc_valor": 0.0,
+  "desc_pct": 32.7
+ },
+ {
+  "conc": "RN Tintas",
+  "loja": "Itapira",
+  "orcamento": "4618598",
+  "valor_total": 7585.0,
+  "data": "2026-06-05",
+  "pgto": "A VISTA",
+  "item": "TOQ FOS COM D161 Elefante B2 16L",
+  "marca": "Genérica",
+  "preco": 590.0,
+  "desc_valor": 0.0,
+  "desc_pct": 26.42
+ },
+ {
+  "conc": "RN Tintas",
+  "loja": "Itapira",
+  "orcamento": "4618598",
+  "valor_total": 7585.0,
+  "data": "2026-06-05",
+  "pgto": "A VISTA",
+  "item": "TOQ FOS COM RM010 Palha A2 16L",
+  "marca": "Genérica",
+  "preco": 575.0,
+  "desc_valor": 0.0,
+  "desc_pct": 32.18
+ },
+ {
+  "conc": "RN Tintas",
+  "loja": "Itapira",
+  "orcamento": "4618598",
+  "valor_total": 7585.0,
+  "data": "2026-06-05",
+  "pgto": "A VISTA",
+  "item": "Verniz Tingidor B.solv.imbuia BRIL.3,6LT- Montana",
+  "marca": "Montana",
+  "preco": 120.0,
+  "desc_valor": 0.0,
+  "desc_pct": 24.65
+ },
+ {
+  "conc": "Diamante Tintas",
+  "loja": "Jundiai",
+  "orcamento": "16062605/26081500",
+  "valor_total": 1350.0,
+  "data": "2026-05-26",
+  "pgto": "Não informado",
+  "item": "Fita Crepe Azul Eurocel 50X50M Imob. MSK6075",
+  "marca": "Eurocel",
+  "preco": 26.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Diamante Tintas",
+  "loja": "Jundiai",
+  "orcamento": "16062605/26081500",
+  "valor_total": 1350.0,
+  "data": "2026-05-26",
+  "pgto": "Não informado",
+  "item": "Tinta ESM Bril Solv Coralit Branco 5202672",
+  "marca": "Coral",
+  "preco": 139.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Diamante Tintas",
+  "loja": "Jundiai",
+  "orcamento": "16062605/26081500",
+  "valor_total": 1350.0,
+  "data": "2026-05-26",
+  "pgto": "Não informado",
+  "item": "Tinta Fundo Galv SOL Eucatex Galvanizado 8502",
+  "marca": "Eucatex",
+  "preco": 159.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Diamante Tintas",
+  "loja": "Jundiai",
+  "orcamento": "16062605/26081500",
+  "valor_total": 1350.0,
+  "data": "2026-05-26",
+  "pgto": "Não informado",
+  "item": "Papel Ondulado Hobby Bege 1.20X030MT",
+  "marca": "Genérica",
+  "preco": 73.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Diamante Tintas",
+  "loja": "Jundiai",
+  "orcamento": "16062605/26081500",
+  "valor_total": 1350.0,
+  "data": "2026-05-26",
+  "pgto": "Não informado",
+  "item": "Lona Plast P/ Obras BRF Preta 4MTS LN Fina",
+  "marca": "Genérica",
+  "preco": 2.1,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Diamante Tintas",
+  "loja": "Jundiai",
+  "orcamento": "16062605/26081500",
+  "valor_total": 1350.0,
+  "data": "2026-05-26",
+  "pgto": "Não informado",
+  "item": "Verniz Poli Brilhant Sayerlack Poliulack Bril 2300",
+  "marca": "Sayerlack",
+  "preco": 136.1,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Diamante Tintas",
+  "loja": "Jundiai",
+  "orcamento": "16062605/26081500",
+  "valor_total": 1350.0,
+  "data": "2026-05-26",
+  "pgto": "Não informado",
+  "item": "Selante PU Const AUT Unipega PU40 Branco 0190 M",
+  "marca": "Unipega",
+  "preco": 17.9,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Carola Tintas",
+  "loja": "Campo Limpo Paulista",
+  "orcamento": "000002018564",
+  "valor_total": 5843.4,
+  "data": "2026-07-15",
+  "pgto": "CARTÃO CREDITO 1X",
+  "item": "Eucatex Fundo Prep Paredes Base Agua 15L Balde",
+  "marca": "Eucatex",
+  "preco": 179.9,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Carola Tintas",
+  "loja": "Campo Limpo Paulista",
+  "orcamento": "000002018564",
+  "valor_total": 5843.4,
+  "data": "2026-07-15",
+  "pgto": "CARTÃO CREDITO 1X",
+  "item": "Lixa Massa 180",
+  "marca": "Genérica",
+  "preco": 1.5,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Carola Tintas",
+  "loja": "Campo Limpo Paulista",
+  "orcamento": "000002018564",
+  "valor_total": 5843.4,
+  "data": "2026-07-15",
+  "pgto": "CARTÃO CREDITO 1X",
+  "item": "Eucalux ESM Bril Tabaco 3,6L 6000014.01",
+  "marca": "Eucatex",
+  "preco": 129.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Carola Tintas",
+  "loja": "Campo Limpo Paulista",
+  "orcamento": "000002018564",
+  "valor_total": 5843.4,
+  "data": "2026-07-15",
+  "pgto": "CARTÃO CREDITO 1X",
+  "item": "Eucalux ESM Bril Branco 3,6L 6000001.01",
+  "marca": "Eucatex",
+  "preco": 129.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Carola Tintas",
+  "loja": "Campo Limpo Paulista",
+  "orcamento": "000002018564",
+  "valor_total": 5843.4,
+  "data": "2026-07-15",
+  "pgto": "CARTÃO CREDITO 1X",
+  "item": "Lona Preta POP Metro 4M Largura COD.8 20 Micras 0",
+  "marca": "Genérica",
+  "preco": 2.35,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Carola Tintas",
+  "loja": "Campo Limpo Paulista",
+  "orcamento": "000002018564",
+  "valor_total": 5843.4,
+  "data": "2026-07-15",
+  "pgto": "CARTÃO CREDITO 1X",
+  "item": "Carola PRO Textura Lisa Acrilica Barrica (externo) 0",
+  "marca": "Carola",
+  "preco": 79.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Carola Tintas",
+  "loja": "Campo Limpo Paulista",
+  "orcamento": "000002018564",
+  "valor_total": 5843.4,
+  "data": "2026-07-15",
+  "pgto": "CARTÃO CREDITO 1X",
+  "item": "ES B354 ES Chuva DE Petalas Suvinil ACR Semi Brilho Toque DE LUZ Base A 3,2L",
+  "marca": "Suvinil",
+  "preco": 270.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Carola Tintas",
+  "loja": "Campo Limpo Paulista",
+  "orcamento": "000002018564",
+  "valor_total": 5843.4,
+  "data": "2026-07-15",
+  "pgto": "CARTÃO CREDITO 1X",
+  "item": "ES C570 ES Babushka Suvinil ACR Semi Brilho Toque DE LUZ Base B 3,2L",
+  "marca": "Suvinil",
+  "preco": 270.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Carola Tintas",
+  "loja": "Campo Limpo Paulista",
+  "orcamento": "000002018564",
+  "valor_total": 5843.4,
+  "data": "2026-07-15",
+  "pgto": "CARTÃO CREDITO 1X",
+  "item": "ES B395 ES Vento Gelido Suvinil ACR Fosco Toque Classica Base A 16L",
+  "marca": "Suvinil",
+  "preco": 589.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Carola Tintas",
+  "loja": "Campo Limpo Paulista",
+  "orcamento": "000002018564",
+  "valor_total": 5843.4,
+  "data": "2026-07-15",
+  "pgto": "CARTÃO CREDITO 1X",
+  "item": "ES C395 ES Conforto Suvinil ACR Fosco Toque Classica Base B 16L",
+  "marca": "Suvinil",
+  "preco": 589.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Carola Tintas",
+  "loja": "Campo Limpo Paulista",
+  "orcamento": "000002018564",
+  "valor_total": 5843.4,
+  "data": "2026-07-15",
+  "pgto": "CARTÃO CREDITO 1X",
+  "item": "ES A010 ES Arroz Doce Suvinil ACR Semi Brilho Toque DE LUZ Base Nova A 16L",
+  "marca": "Suvinil",
+  "preco": 949.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ },
+ {
+  "conc": "Carola Tintas",
+  "loja": "Campo Limpo Paulista",
+  "orcamento": "000002018564",
+  "valor_total": 5843.4,
+  "data": "2026-07-15",
+  "pgto": "CARTÃO CREDITO 1X",
+  "item": "Suvinil ACR Semi Brilho Toque DE LUZ Branco Lata",
+  "marca": "Suvinil",
+  "preco": 949.0,
+  "desc_valor": 0.0,
+  "desc_pct": 0.0
+ }
+];
+const NOTA_DESC_DIAMANTE = "Descontos concedidos sobre o total do pedido (e não item a item) aparecem apenas como observação, não na coluna de desconto.";
+
+</script>
+<script>
+const CORES={"Saci Tintas":"var(--c-saci)","RN Tintas":"var(--c-rn)","Carola Tintas":"var(--c-carola)","Diamante Tintas":"var(--c-diamante)"};
+const fmt=n=>n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtData=d=>{const[a,m,x]=d.split('-');return `${x}/${m}/${a}`;};
+
+// popular selects
+function uniq(k){return [...new Set(DADOS.map(d=>d[k]))].sort((a,b)=>a.localeCompare(b,'pt-BR'));}
+const _g=id=>document.getElementById(id);
+uniq('conc').forEach(v=>_g('f-conc').insertAdjacentHTML('beforeend',`<option>${v}</option>`));
+uniq('loja').forEach(v=>_g('f-cidade').insertAdjacentHTML('beforeend',`<option>${v}</option>`));
+uniq('marca').forEach(v=>_g('f-marca').insertAdjacentHTML('beforeend',`<option>${v}</option>`));
+uniq('pgto').forEach(v=>_g('f-pgto').insertAdjacentHTML('beforeend',`<option>${v}</option>`));
+uniq('marca').forEach(v=>_g('cmp-marca').insertAdjacentHTML('beforeend',`<option>${v}</option>`));
+
+const $=id=>document.getElementById(id);
+const els={
+  busca:$('f-busca'),conc:$('f-conc'),cidade:$('f-cidade'),marca:$('f-marca'),pgto:$('f-pgto'),
+  desc:$('f-desc'),max:$('f-max')
+};
+
+function filtrar(){
+  const q=els.busca.value.trim().toLowerCase();
+  return DADOS.filter(d=>{
+    if(els.conc.value && d.conc!==els.conc.value)return false;
+    if(els.cidade.value && d.loja!==els.cidade.value)return false;
+    if(els.marca.value && d.marca!==els.marca.value)return false;
+    if(els.pgto.value && d.pgto!==els.pgto.value)return false;
+    if(els.max.value && d.preco>parseFloat(els.max.value))return false;
+    const temDesc=d.desc_pct>0||d.desc_valor>0;
+    if(els.desc.value==='com' && !temDesc)return false;
+    if(els.desc.value==='sem' && temDesc)return false;
+    if(q && !(d.item.toLowerCase().includes(q)||d.marca.toLowerCase().includes(q)))return false;
+    return true;
+  });
+}
+
+function descCell(d){
+  if(d.desc_pct>0)return `<span class="desc-yes">${fmt(d.desc_pct)}%</span>`;
+  if(d.desc_valor>0)return `<span class="desc-yes">R$ ${fmt(d.desc_valor)}</span>`;
+  return `<span class="desc-no">—</span>`;
+}
+
+// agrupa itens filtrados por orçamento (concorrente + cidade + data + número)
+function agrupar(itens){
+  const mapa=new Map();
+  itens.forEach(d=>{
+    const id=[d.conc,d.loja,d.data,d.orcamento||''].join('||');
+    if(!mapa.has(id)){
+      mapa.set(id,{conc:d.conc,cidade:d.loja,data:d.data,orcamento:d.orcamento||'',pgto:d.pgto,itens:[]});
+    }
+    mapa.get(id).itens.push(d);
+  });
+  return [...mapa.values()];
+}
+
+function ordenarGrupos(grupos){
+  const ordem=$('ordem').value;
+  grupos.sort((a,b)=>{
+    if(ordem==='data')   return b.data.localeCompare(a.data);
+    if(ordem==='conc')   return a.conc.localeCompare(b.conc,'pt-BR')||b.data.localeCompare(a.data);
+    if(ordem==='cidade') return a.cidade.localeCompare(b.cidade,'pt-BR')||b.data.localeCompare(a.data);
+    if(ordem==='itens')  return b.itens.length-a.itens.length;
+    return 0;
+  });
+  return grupos;
+}
+
+// lembra quais orçamentos estão abertos entre re-renders
+const abertos=new Set();
+
+function render(){
+  const arr=filtrar();
+  const grupos=ordenarGrupos(agrupar(arr));
+  $('cntorc').textContent=grupos.length;
+  $('cntitens').textContent=arr.length;
+  const box=$('grupos');
+  if(!grupos.length){box.innerHTML=`<div class="orc"><div class="empty">Nenhum orçamento corresponde aos filtros.</div></div>`;return;}
+  box.innerHTML=grupos.map(g=>{
+    const valorTotal=g.itens[0].valor_total||0;
+    const descs=g.itens.filter(i=>i.desc_pct>0).map(i=>i.desc_pct);
+    const descMed=descs.length?(descs.reduce((a,b)=>a+b,0)/descs.length):0;
+    const id=[g.conc,g.cidade,g.data,g.orcamento].join('||');
+    const aberto=abertos.has(id)?'open':'';
+    const linhas=g.itens.slice().sort((a,b)=>b.preco-a.preco).map(d=>`
+      <tr>
+        <td class="oi-item">${d.item}</td>
+        <td class="oi-marca"><span class="marca-badge">${d.marca}</span></td>
+        <td class="oi-preco">R$ ${fmt(d.preco)}</td>
+        <td class="oi-desc">${descCell(d)}</td>
+      </tr>`).join('');
+    return `
+    <div class="orc ${aberto}" data-id="${id.replace(/"/g,'&quot;')}">
+      <div class="orc-head">
+        <span class="chev">▶</span>
+        <div class="orc-id">
+          <div class="orc-conc"><span class="dot" style="background:${CORES[g.conc]||'var(--muted)'}"></span>${g.conc}</div>
+          <div class="orc-meta">${g.cidade} · ${fmtData(g.data)}${g.orcamento?` · <span class="num">nº ${g.orcamento}</span>`:''}</div>
+        </div>
+        <div class="orc-stats">
+          <div class="stat"><div class="v">${g.itens.length}</div><div class="k">itens</div></div>
+          <div class="stat"><div class="v">R$ ${fmt(valorTotal)}</div><div class="k">valor do orçamento</div></div>
+          ${descMed>0?`<div class="stat"><div class="v">${fmt(descMed)}%</div><div class="k">desc. médio</div></div>`:''}
+        </div>
+        <div class="orc-pgto"><div class="v">${g.pgto}</div><div class="k">pagamento</div></div>
+      </div>
+      <div class="orc-body">
+        <table><tbody>${linhas}</tbody></table>
+      </div>
+    </div>`;
+  }).join('');
+
+  // toggle expandir/recolher
+  box.querySelectorAll('.orc').forEach(el=>{
+    const id=el.dataset.id;
+    el.querySelector('.orc-head').addEventListener('click',()=>{
+      el.classList.toggle('open');
+      if(el.classList.contains('open'))abertos.add(id);else abertos.delete(id);
+    });
+  });
+}
+
+// KPIs
+function kpis(){
+  const nConc=uniq('conc').length;
+  const nMarcas=uniq('marca').length;
+  const nOrc=agrupar(DADOS).length;
+  const precos=DADOS.map(d=>d.preco);
+  const cards=[
+    {n:nOrc,l:'Orçamentos'},
+    {n:DADOS.length,l:'Itens monitorados'},
+    {n:nConc,l:'Concorrentes'},
+    {n:uniq('loja').length,l:'Cidades'},
+    {n:nMarcas,l:'Marcas distintas'},
+    {n:'R$ '+fmt(Math.min(...precos)),l:'Menor preço'},
+    {n:'R$ '+fmt(Math.max(...precos)),l:'Maior preço'},
+  ];
+  $('kpis').innerHTML=cards.map(c=>`<div class="kpi"><div class="n">${c.n}</div><div class="l">${c.l}</div></div>`).join('');
+}
+
+// Comparador
+function comparar(){
+  const m=$('cmp-marca').value;
+  const arr=DADOS.filter(d=>d.marca===m).sort((a,b)=>a.preco-b.preco);
+  const box=$('cmp-bars');
+  if(!arr.length){box.innerHTML='<p class="hint">Sem itens.</p>';return;}
+  const max=Math.max(...arr.map(d=>d.preco));
+  box.innerHTML=arr.map(d=>`
+    <div class="bar-row">
+      <div class="bar-lbl">${d.conc}<small>${d.item}</small></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(d.preco/max*100)}%;background:${CORES[d.conc]}"></div></div>
+      <div class="bar-val">R$ ${fmt(d.preco)}</div>
+    </div>`).join('');
+}
+
+// listeners
+['busca','conc','cidade','marca','pgto','desc','max'].forEach(id=>{
+  els[id].addEventListener('input',render);
+});
+$('ordem').addEventListener('change',render);
+$('reset').addEventListener('click',()=>{
+  ['busca','conc','cidade','marca','pgto','desc','max'].forEach(id=>els[id].value='');
+  render();
+});
+$('cmp-marca').addEventListener('change',comparar);
+
+// nota diamante
+$('notaDesc').textContent=NOTA_DESC_DIAMANTE;
+
+// init
+kpis();render();
+$('cmp-marca').value='Suvinil';comparar();
+</script>
+</body>
+</html>
