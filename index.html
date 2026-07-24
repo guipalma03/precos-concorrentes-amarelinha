@@ -1266,7 +1266,7 @@ function render(){
         </div>
         <div class="orc-stats">
           <div class="stat"><div class="v">${g.itens.length}</div><div class="k">itens</div></div>
-          <div class="stat"><div class="v">R$ ${fmt(Math.min(...precos))}–${fmt(Math.max(...precos))}</div><div class="k">faixa de preço</div></div>
+          <div class="stat"><div class="v">R$ ${fmt(precos.reduce((a,b)=>a+b,0))}</div><div class="k">valor total</div></div>
           ${descMed>0?`<div class="stat"><div class="v">${fmt(descMed)}%</div><div class="k">desc. médio</div></div>`:''}
         </div>
         <div class="orc-pgto"><div class="v">${g.pgto}</div><div class="k">pagamento</div></div>
